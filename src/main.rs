@@ -29,7 +29,7 @@ extern "system" fn hookproc(ncode: i32, wparam: WPARAM, lparam: LPARAM) -> LRESU
                         return LRESULT(1);
                     } else if ENTER_DOWN {
                         COMBO_KEY = true;
-                        send_input(vec![Input(VK_CONTROL, false)]);
+                        send_input(vec![KbdInput::Down(VK_CONTROL)]);
                     }
                     println!("key name: {}", get_key_name(hook_struct));
                 }
@@ -37,10 +37,10 @@ extern "system" fn hookproc(ncode: i32, wparam: WPARAM, lparam: LPARAM) -> LRESU
                     if hook_struct.vkCode == VK_RETURN.0 as u32 {
                         ENTER_DOWN = false;
                         if COMBO_KEY {
-                            send_input(vec![Input(VK_CONTROL, true)]);
+                            send_input(vec![KbdInput::Up(VK_CONTROL)]);
                             COMBO_KEY = false;
                         } else if hook_struct.time - ENTER_DOWN_TIME < 500 {
-                            send_input(vec![Input(VK_RETURN, false), Input(VK_RETURN, true)]);
+                            send_input(vec![KbdInput::Down(VK_RETURN), KbdInput::Up(VK_RETURN)]);
                         }
                     }
                 }
@@ -64,23 +64,27 @@ fn get_key_name(hook_struct: &KBDLLHOOKSTRUCT) -> String {
     }
 }
 
-struct Input(VIRTUAL_KEY, bool);
-fn send_input(inputs: Vec<Input>) {
+enum KbdInput {
+    Down(VIRTUAL_KEY),
+    Up(VIRTUAL_KEY),
+}
+
+fn send_input(inputs: Vec<KbdInput>) {
     let mut input_vec: Vec<INPUT> = vec![];
 
-    for k in inputs.iter() {
-        let Input(vk, is_up) = *k;
+    for input in inputs.iter() {
+        let (vk, flags) = match *input {
+            KbdInput::Down(vk) => (vk, KEYBD_EVENT_FLAGS(0)),
+            KbdInput::Up(vk) => (vk, KEYEVENTF_KEYUP),
+        };
+
         input_vec.push(INPUT {
             r#type: INPUT_KEYBOARD,
             Anonymous: INPUT_0 {
                 ki: KEYBDINPUT {
                     wVk: vk,
                     wScan: 0,
-                    dwFlags: if is_up {
-                        KEYEVENTF_KEYUP
-                    } else {
-                        KEYBD_EVENT_FLAGS(0)
-                    },
+                    dwFlags: flags,
                     time: 0,
                     dwExtraInfo: 0,
                 },
