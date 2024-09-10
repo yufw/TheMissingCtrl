@@ -55,7 +55,9 @@ extern "system" fn hookproc(ncode: i32, wparam: WPARAM, lparam: LPARAM) -> LRESU
 fn get_key_name(hook_struct: &KBDLLHOOKSTRUCT) -> String {
     let mut msg = 1;
     msg += hook_struct.scanCode << 16;
-    msg += hook_struct.flags.0 << 24;
+    if hook_struct.vkCode != VK_RSHIFT.0 as u32 {
+        msg += hook_struct.flags.0 << 24;
+    }
     unsafe {
         let mut lpstring: [u8; 100] = [0; 100];
         GetKeyNameTextA(msg as i32, &mut lpstring);
