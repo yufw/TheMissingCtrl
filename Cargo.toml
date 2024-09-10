@@ -3,6 +3,10 @@ name = "themissingctrl"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "TheMissingCtrl"
+path = "src/main.rs"
+
 [dependencies.windows]
 version = "0.58.0"
 features = [
