@@ -72,27 +72,28 @@ enum KbdInput {
 }
 
 fn send_input(inputs: Vec<KbdInput>) {
-    let mut input_vec: Vec<INPUT> = vec![];
+    let input_vec: Vec<INPUT> = inputs
+        .iter()
+        .map(|input| {
+            let (vk, flags) = match *input {
+                KbdInput::Down(vk) => (vk, KEYBD_EVENT_FLAGS(0)),
+                KbdInput::Up(vk) => (vk, KEYEVENTF_KEYUP),
+            };
 
-    for input in inputs.iter() {
-        let (vk, flags) = match *input {
-            KbdInput::Down(vk) => (vk, KEYBD_EVENT_FLAGS(0)),
-            KbdInput::Up(vk) => (vk, KEYEVENTF_KEYUP),
-        };
-
-        input_vec.push(INPUT {
-            r#type: INPUT_KEYBOARD,
-            Anonymous: INPUT_0 {
-                ki: KEYBDINPUT {
-                    wVk: vk,
-                    wScan: 0,
-                    dwFlags: flags,
-                    time: 0,
-                    dwExtraInfo: 0,
+            INPUT {
+                r#type: INPUT_KEYBOARD,
+                Anonymous: INPUT_0 {
+                    ki: KEYBDINPUT {
+                        wVk: vk,
+                        wScan: 0,
+                        dwFlags: flags,
+                        time: 0,
+                        dwExtraInfo: 0,
+                    },
                 },
-            },
-        });
-    }
+            }
+        })
+        .collect();
 
     unsafe {
         SendInput(&input_vec, size_of::<INPUT>() as i32);
